@@ -52,7 +52,6 @@ coverage.xml
 cover/
 .postman/
 .globals/
-.globals/workspace.globals.yaml
 # Translations
 *.mo
 *.pot
