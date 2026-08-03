@@ -1,9 +1,9 @@
 from fastapi import FastAPI , APIRouter
-from dotenv import load_dotenv
-load_dotenv()
+from routes import base ,data
 
-from routes import base
+print("MAIN.PY LOADED")
 
-app=APIRouter()
+app = APIRouter()
 app.include_router(base.base_router)
- 
+app.include_router(data.data_router)
+
