@@ -43,7 +43,8 @@ class DataController(BassController):
                 random_key + "_" + cleaned_file_name
             )
 
-        return new_file_path
+        return new_file_path, random_key + "_" + cleaned_file_name
+    
     def get_clean_file_name(self, orig_file_name: str) :
 
         # remove any special characters, except underscore and .
