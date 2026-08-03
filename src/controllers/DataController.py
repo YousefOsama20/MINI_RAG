@@ -1,0 +1,20 @@
+from .BassController import BassController
+from fastapi import UploadFile
+
+
+class DataController(BassController):
+
+    def __init__(self):
+        super().__init__()
+        self.size_scale = 1024 * 1024  # 1 MB in bytes
+
+    def  validate_uploaded_file(self, file: UploadFile):
+
+        if file.content_type not in self.app_setting.FILE_UPLOAD_TYPES:
+           return False
+
+        if file.size > self.app_setting.FILE_MAX_SIZE * self.size_scale:
+           return False
+         
+        return True
+        
