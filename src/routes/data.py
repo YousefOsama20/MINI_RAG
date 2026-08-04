@@ -2,7 +2,6 @@ from fastapi import FastAPI, APIRouter, Depends, UploadFile, status
 from fastapi.responses import JSONResponse
 import os
 from helpers.config import get_settings, Settings
-from controllers import DataController
 import logging
 from controllers import DataController, projectController ,ProcessController
 import aiofiles
@@ -93,6 +92,12 @@ async def process_endpoint(project_id: str, process_request: ProcessRequest):
     return JSONResponse(
         content={
             "signal": ResponseSignal.FILE_PROCESS_SUCCESS.value,
-            "chunks": file_chunks
+            "chunks": [
+                {
+                    "page_content": chunk.page_content,
+                    "metadata": chunk.metadata,
+                }
+                for chunk in file_chunks
+            ]
         }
     )
