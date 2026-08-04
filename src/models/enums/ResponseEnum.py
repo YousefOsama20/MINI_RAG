@@ -7,3 +7,5 @@ class ResponseSignal(Enum):
     FILE_TYPE_NOT_ALLOWED = "failed to upload file, file type not allowed"
     FILE_UPLOAD_SUCCESS = "successfully uploaded file"
     FILE_UPLOAD_FAILED = "failed to upload file"
+    FILE_PROCESS_SUCCESS = "successfully processed file"
+    FILE_PROCESS_FAILED = "failed to process file"
