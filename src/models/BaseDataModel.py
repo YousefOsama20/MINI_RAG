@@ -1,4 +1,4 @@
-from helpers.config import get_settings, SETTINGS
+from helpers.config import get_settings
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 class BaseDataModel:
