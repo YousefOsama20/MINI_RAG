@@ -9,7 +9,10 @@ services:
 
     volumes:
       - ./mongodb:/data/db
-
+    
+    networks:
+      - backend
+    
     restart: always
 
 networks:
