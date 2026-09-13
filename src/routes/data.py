@@ -9,7 +9,8 @@ from models import ResponseSignal , ProcessingEnum
 from .schemes.data import ProcessRequest
 from models.ProjectModels import ProjectModel 
 from models.ChunkModel import ChunkModel
-from models.db_schemes import DataChunk
+from models.AssetModel import AssetModel
+from models.db_schemes import DataChunk, Asset  
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -22,12 +23,18 @@ data_router = APIRouter(
 async def upload_data(request: Request, project_id: str, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
         
-    project = await ProjectModel(
-        db_client= request.app.db_client
-    ).get_project_or_create_one(project_id=project_id)
+    
+    project_model = await ProjectModel.create_instance(
+        db_client=request.app.db_client
+    )
+
+    project = await project_model.get_project_or_create_one(
+        project_id=project_id
+    )
 
     data_controller = DataController()
-    is_valid ,result_signal= data_controller.validate_uploaded_file(file=file)
+
+    is_valid, result_signal = data_controller.validate_uploaded_file(file=file)
 
     if not is_valid:
         return JSONResponse(
@@ -59,12 +66,29 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
                 "signal": ResponseSignal.FILE_UPLOAD_FAILED.value
                     }
         )
-    
+
+    asset_model = await AssetModel.create_instance(
+        db_client=request.app.db_client
+    )
+
+    asset = Asset(
+        asset_project_id=project.id,
+        asset_type=file.content_type,
+        asset_name=file.filename,
+        asset_size=os.path.getsize(file_path),
+        asset_config={
+            "file_path": file_path,
+            "file_id": file_id
+        }
+    )
+
+    await asset_model.create_asset(asset=asset)
 
     return JSONResponse(
         content={
             "signal": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
             "file_id": file_id, 
+            "asset_id": str(asset.id)
         }
     )
 
@@ -78,9 +102,10 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
 
-    project = await ProjectModel(
+    project_model = await ProjectModel.create_instance(
         db_client= request.app.db_client
-    ).get_project_or_create_one(project_id=project_id)    
+    )
+    project = await project_model.get_project_or_create_one(project_id=project_id)    
 
     process_controller = ProcessController(project_id=project_id)
 
@@ -112,7 +137,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
         for i,chunk in enumerate(file_chunks)
     ]
 
-    chunk_model = ChunkModel(
+    chunk_model = await ChunkModel.create_instance(
         db_client=request.app.db_client
     )
 
