@@ -22,12 +22,18 @@ data_router = APIRouter(
 async def upload_data(request: Request, project_id: str, file: UploadFile,
                       app_settings: Settings = Depends(get_settings)):
         
-    project = await ProjectModel(
-        db_client= request.app.db_client
-    ).get_project_or_create_one(project_id=project_id)
+    
+    project_model = await ProjectModel.create_instance(
+        db_client=request.app.db_client
+    )
+
+    project = await project_model.get_project_or_create_one(
+        project_id=project_id
+    )
 
     data_controller = DataController()
-    is_valid ,result_signal= data_controller.validate_uploaded_file(file=file)
+
+    is_valid, result_signal = data_controller.validate_uploaded_file(file=file)
 
     if not is_valid:
         return JSONResponse(
@@ -78,9 +84,10 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
     overlap_size = process_request.overlap_size
     do_reset = process_request.do_reset
 
-    project = await ProjectModel(
+    project_model = await ProjectModel.create_instance(
         db_client= request.app.db_client
-    ).get_project_or_create_one(project_id=project_id)    
+    )
+    project = await project_model.get_project_or_create_one(project_id=project_id)    
 
     process_controller = ProcessController(project_id=project_id)
 
@@ -112,7 +119,7 @@ async def process_endpoint(request: Request, project_id: str, process_request: P
         for i,chunk in enumerate(file_chunks)
     ]
 
-    chunk_model = ChunkModel(
+    chunk_model = await ChunkModel.create_instance(
         db_client=request.app.db_client
     )
 
