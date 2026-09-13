@@ -9,7 +9,8 @@ from models import ResponseSignal , ProcessingEnum
 from .schemes.data import ProcessRequest
 from models.ProjectModels import ProjectModel 
 from models.ChunkModel import ChunkModel
-from models.db_schemes import DataChunk
+from models.AssetModel import AssetModel
+from models.db_schemes import DataChunk, Asset  
 
 logger = logging.getLogger('uvicorn.error')
 
@@ -65,12 +66,29 @@ async def upload_data(request: Request, project_id: str, file: UploadFile,
                 "signal": ResponseSignal.FILE_UPLOAD_FAILED.value
                     }
         )
-    
+
+    asset_model = await AssetModel.create_instance(
+        db_client=request.app.db_client
+    )
+
+    asset = Asset(
+        asset_project_id=project.id,
+        asset_type=file.content_type,
+        asset_name=file.filename,
+        asset_size=os.path.getsize(file_path),
+        asset_config={
+            "file_path": file_path,
+            "file_id": file_id
+        }
+    )
+
+    await asset_model.create_asset(asset=asset)
 
     return JSONResponse(
         content={
             "signal": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
             "file_id": file_id, 
+            "asset_id": str(asset.id)
         }
     )
 
