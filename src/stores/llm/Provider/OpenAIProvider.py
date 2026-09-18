@@ -5,13 +5,13 @@ import logging
 
 class OpenAIProvider(LLMInterface):
 
-    def __init__(self, api_key: str, api_url: str=None,
+    def __init__(self, api_key: str, base_url: str=None,
                        default_input_max_characters: int=1000,
                        default_generation_max_output_tokens: int=1000,
                        default_generation_temperature: float=0.1):
         
         self.api_key = api_key
-        self.api_url = api_url
+        self.base_url = base_url
 
         self.default_input_max_characters = default_input_max_characters
         self.default_generation_max_output_tokens = default_generation_max_output_tokens
@@ -23,8 +23,8 @@ class OpenAIProvider(LLMInterface):
         self.embedding_size = None
 
         self.client = OpenAI(  
-            api_key = self.api_key,
-            api_url = self.api_url
+            api_key = self.api_key if self.api_key else "dummy_key",
+            base_url = self.base_url if self.base_url else None
         )
         self.logger = logging.getLogger(__name__)
 
