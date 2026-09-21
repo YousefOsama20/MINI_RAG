@@ -9,9 +9,9 @@ class VectorDBProviderFactory:
         self.config = config
         self.base_controller = BassController()
 
-    def create(self, Provider: str):
+    def create(self, provider: str):
         
-        if Provider == VectorDBEnums.QDRANT.value:
+        if provider == VectorDBEnums.QDRANT.value:
 
             database_path = self.base_controller.get_database_path(db_name = self.config.VECTOR_DB_PATH)
 
@@ -21,4 +21,4 @@ class VectorDBProviderFactory:
             )
         
         else:
-            raise ValueError(f"Unknown database type: {Provider}")
+            raise ValueError(f"Unknown database type: {provider}")
