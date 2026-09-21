@@ -26,7 +26,7 @@ class QdrantDB(VectorDBInterface):
         
     def disconnect(self):
         
-        delf.client = None
+        self.client = None
 
     def is_collection_exists(self, collection_name:str) -> bool:
 
@@ -42,7 +42,7 @@ class QdrantDB(VectorDBInterface):
 
     def delete_collection(self, collection_name: str):
         
-        if self.client.is_collection_exists(collection_name=collection_name):
+        if self.is_collection_exists(collection_name=collection_name):
             return self.client.delete_collection(collection_name=collection_name)
 
     def create_collection(self, collection_name: str, embedding_size: int, do_reset: bool=False):
@@ -50,7 +50,7 @@ class QdrantDB(VectorDBInterface):
         if do_reset:
             _ = self.delete_collection(collection_name=collection_name)
         
-        if  not self.client.is_collection_exists(collection_name=collection_name):
+        if  not self.is_collection_exists(collection_name=collection_name):
 
             _ = self.client.create_collection(
                 collection_name=collection_name,
@@ -65,25 +65,28 @@ class QdrantDB(VectorDBInterface):
     def insert_one(self, collection_name: str, text: str, vector: list,
                          metadata: dict = None, 
                          record_id: str = None):
-
+        
         if not self.is_collection_exists(collection_name=collection_name):
-            self.logger.error(f"Collection {collection_name} does not exist")
-            return False
-
-        try:
-            _ = self.client.upload_records(
-                collection_name=collection_name,
-                records=[
-                    models.Record(
-                        vector=vector,
-                    payload={"text": text, "metadata":metadata}
-                )
-            ]
-        )
-        except Exception as e:
-            self.logger.error(f"Error inserting one into Qdrant: {str(e)}")
+            self.logger.error(f"Can not insert new record to non-existed collection: {collection_name}")
             return False
         
+        try:
+            _ = self.client.upsert(
+                collection_name=collection_name,
+                points=[
+                    models.PointStruct(
+                        id=record_id,
+                        vector=vector,
+                        payload={
+                            "text": text, "metadata": metadata
+                        }
+                    )
+                ]
+            )
+        except Exception as e:
+            self.logger.error(f"Error while inserting batch: {e}")
+            return False
+
         return True
 
     def insert_many(self, collection_name: str, texts: list, 
@@ -92,44 +95,45 @@ class QdrantDB(VectorDBInterface):
         
         if metadata is None:
             metadata = [None] * len(texts)
-        
+
         if record_ids is None:
-            record_ids = [None] * len(texts)
-        
+            record_ids = list(range(0, len(texts)))
+
         for i in range(0, len(texts), batch_size):
+            batch_end = i + batch_size
 
-            end_index = i + batch_size
+            batch_texts = texts[i:batch_end]
+            batch_vectors = vectors[i:batch_end]
+            batch_metadata = metadata[i:batch_end]
+            batch_record_ids = record_ids[i:batch_end]
 
-            batch_texts = text[i:end_index]
-            batch_vectors = vector[i:end_index]
-            batch_metadata = metadata[i:end_index]
-
-            batch_records= [    
-                models.Record(
+            batch_records = [
+                models.PointStruct(
+                    id=batch_record_ids[x],
                     vector=batch_vectors[x],
-                    payload={"text": batch_texts[x], "metadata": batch_metadata[x]}
+                    payload={
+                        "text": batch_texts[x], "metadata": batch_metadata[x]
+                    }
                 )
-
                 for x in range(len(batch_texts))
             ]
-        
-        try:    
-            _ = self.client.upload_records(
-                collection_name=collection_name,
-                records=batch_records
-            )
 
-        except Exception as e:
-            self.logger.error(f"Error inserting batch into Qdrant: {str(e)}")
-            return False
+            try:
+                _ = self.client.upsert(
+                    collection_name=collection_name,
+                    points=batch_records,
+                )
+            except Exception as e:
+                self.logger.error(f"Error while inserting batch: {e}")
+                return False
 
         return True
 
     def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
 
-        return self.client.search(
+        return self.client.query_points(
             collection_name=collection_name,
-            query_vector=vector,
+            query=vector,
             limit=limit
-        )
+        ).points
 
