@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from stores.llm.LLMProviderFactory import LLMProviderFactory
 from stores.vectordb.VectorDBProviderFactory import VectorDBProviderFactory    
+from stores.llm.templates.template_perser import TemplateParser
 
 print("MAIN.PY LOADED")
 
@@ -33,6 +34,11 @@ async def startup_db_client():
         provider=setting.VECTOR_DB_BACKEND
     )
     app.vectordb_client.connect()      
+
+    app.template_parser = TemplateParser(
+        language =setting.PRIMARY_LANG,
+        default_language = setting.DEFAULT_LANG
+    )
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
