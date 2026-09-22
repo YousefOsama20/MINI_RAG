@@ -22,8 +22,9 @@ class CohereEnums(Enum):
     DOCUMENT = "search_document"
     
 class GeminiEnums(Enum):
+    SYSTEM = "system"
     USER = "user"
-    MODEL = "model"
+    ASSISTANT = "assistant"
 
 class DocumentTypeEnum(Enum):
     DOCUMENT = "document"
